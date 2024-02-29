@@ -24,6 +24,8 @@ import lombok.NonNull;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 final class HCaptchaWebViewHelper {
@@ -130,9 +132,7 @@ final class HCaptchaWebViewHelper {
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private class HCaptchaWebClient extends WebViewClient {
-        private final Uri loaderUri = Uri.parse(
-                "https://www.unpkg.com/@hcaptcha/loader@" + BuildConfig.LOADER_VERSION + "/dist/index.mjs"
-        );
+        private final Map<Uri, String> assetsCache = new HashMap<>();
 
         @NonNull
         private final Handler handler;
@@ -143,6 +143,10 @@ final class HCaptchaWebViewHelper {
         HCaptchaWebClient(@NonNull Handler handler, @NonNull HCaptchaStateListener listener) {
             this.handler = handler;
             this.listener = listener;
+
+            final String baseUrl = "https://unpkg.com/@hcaptcha/loader@" + BuildConfig.LOADER_VERSION + "/dist";
+            assetsCache.put(Uri.parse(baseUrl + "/index.es5.js"), "hcaptcha/loader.js");
+            assetsCache.put(Uri.parse(baseUrl + "/polyfills.js"), "hcaptcha/polyfills.js");
         }
 
         private String stripUrl(String url) {
@@ -152,7 +156,8 @@ final class HCaptchaWebViewHelper {
         @Override
         public WebResourceResponse shouldInterceptRequest (final WebView view, final WebResourceRequest request) {
             final Uri requestUri = request.getUrl();
-            if (loaderUri.equals(requestUri)) {
+            final String assetPath = assetsCache.get(requestUri);
+            if (assetPath != null) {
                 try {
                     return new WebResourceResponse(
                             "application/javascript",
@@ -161,10 +166,10 @@ final class HCaptchaWebViewHelper {
                             "OK",
                             Collections.singletonMap("Access-Control-Allow-Origin",
                                     Objects.toString(config.getHost(), "null")),
-                            view.getContext().getAssets().open("hcaptcha/loader.mjs")
+                            view.getContext().getAssets().open(assetPath)
                     );
                 } catch (IOException e) {
-                    HCaptchaLog.w("WebViewHelper wasn't able to load loader.mjs from assets");
+                    HCaptchaLog.w("WebViewHelper wasn't able to load " + assetPath + " from assets");
                 }
             } else if (requestUri != null && requestUri.getScheme() != null && requestUri.getScheme().equals("http")) {
                 handler.post(() -> {

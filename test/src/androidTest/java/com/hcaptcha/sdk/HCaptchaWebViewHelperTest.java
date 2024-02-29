@@ -7,10 +7,12 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.os.Handler;
 import android.os.Looper;
 
 import androidx.test.core.app.ActivityScenario;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.platform.app.InstrumentationRegistry;
 
@@ -21,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -76,7 +79,19 @@ public class HCaptchaWebViewHelperTest {
 
     @Test
     public void testLoaderJsAssetPresence() throws IOException {
-        Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertNotNull(appContext.getAssets().open("hcaptcha/loader.mjs"));
+        AssetManager assets = InstrumentationRegistry
+                .getInstrumentation()
+                .getTargetContext()
+                .getAssets();
+        assertNotNull(assets.open("hcaptcha/loader.js"));
+    }
+
+    @Test
+    public void testPolyfillsJsAssetPresence() throws IOException {
+        AssetManager assets = InstrumentationRegistry
+                .getInstrumentation()
+                .getTargetContext()
+                .getAssets();
+        assertNotNull(assets.open("hcaptcha/polyfills.js"));
     }
 }
